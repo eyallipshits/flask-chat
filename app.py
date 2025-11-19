@@ -1,21 +1,3 @@
-"""Simple Flask chat application.
-
-This app provides a minimal chat backend backed by SQLAlchemy/MySQL.
-
-Environment variables (optional):
-- `MYSQL_USER` (default: "chatuser")
-- `MYSQL_PASSWORD` (default: "chatpass")
-- `MYSQL_DB` (default: "chatdb")
-- `MYSQL_HOST` (default: "localhost")
-
-Routes:
-- `/` and `/<room>`: serve the chat UI (`templates/index.html`).
-- `/api/chat/<room>`: supports `GET` to fetch messages as plain text and
-  `POST` to submit a new message (form fields: `username`, `msg`).
-
-This file only adds comments and docstrings — no behavioral changes.
-"""
-
 from flask import Flask, render_template, request, Response
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -23,26 +5,26 @@ import os
 
 app = Flask(__name__)
 
-# Read DB configuration from environment with sensible defaults for local dev.
+#Eyal: Read DB configuration from environment with sensible defaults for local dev.
 MYSQL_USER = os.environ.get("MYSQL_USER", "chatuser")
 MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "chatpass")
 MYSQL_DB = os.environ.get("MYSQL_DB", "chatdb")
 MYSQL_HOST = os.environ.get("MYSQL_HOST", "localhost")
 
-# SQLAlchemy connection string for a MySQL database using the pymysql driver.
+#Eyal: SQLAlchemy connection string for a MySQL database using the pymysql driver.
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}"
 )
 
-# Disable the event system to save memory (not needed for this simple app).
+#Eyal: Disable the event system to save memory (not needed for this simple app).
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Initialize the ORM
+#Eyal: Initialize the ORM
 db = SQLAlchemy(app)
 
 
 class Message(db.Model):
-    """Represents a chat message stored in the database.
+    """Denis:Represents a chat message stored in the database.
 
     Columns:
     - `id`: primary key
@@ -59,7 +41,7 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
 
-# Ensure tables exist when the app context is available. In production you may
+#Eyal: Ensure tables exist when the app context is available. In production you may
 # want to manage migrations instead of calling `create_all()`.
 with app.app_context():
     db.create_all()
@@ -67,7 +49,7 @@ with app.app_context():
 
 @app.route("/")
 def home():
-    """Serve the main chat UI.
+    """Eyal: Serve the main chat UI.
 
     The frontend (e.g. `templates/index.html`) is responsible for choosing a
     room and interacting with the `/api/chat/<room>` endpoint.
@@ -78,7 +60,7 @@ def home():
 
 @app.route("/<room>")
 def roomchat(room):
-    """Serve the chat UI for a specific room.
+    """Eyal:Serve the chat UI for a specific room.
 
     The UI can read the room from the path and then call the API to fetch and
     post messages for that room.
@@ -89,7 +71,7 @@ def roomchat(room):
 
 @app.route("/api/chat/<room>", methods=["GET", "POST"])
 def get_chat(room):
-    """API endpoint to fetch or post chat messages for `room`.
+    """Eyal:API endpoint to fetch or post chat messages for `room`.
 
     POST (form data):
       - `username` (optional): sender name; defaults to "Anonymous" when empty
@@ -101,27 +83,26 @@ def get_chat(room):
       prefixed with a timestamp and username.
     """
 
-    # POST -> create a new message
+    #Denis: POST -> create a new message
     if request.method == "POST":
-        # Prefer a trimmed username; fall back to a default if the client sends
-        # nothing or only whitespace.
+        #Denis:Prefer a trimmed username; fall back to a default if the client sends nothing or only whitespace.
         username = request.form.get("username", "").strip() or "Anonymous"
 
-        # Message body (required)
+        #Denis: Message body (required)
         msg = request.form.get("msg", "").strip()
 
-        # Validate: don't accept empty messages
+        #Denis: Validate: don't accept empty messages
         if not msg:
             return "Empty", 400
 
-        # Create and persist the message
+        #Denis: Create and persist the message
         message = Message(room=room, username=username, text=msg)
         db.session.add(message)
         db.session.commit()
 
         return "OK", 200
 
-    # GET -> return all messages for the room in chronological order
+    #Denis: GET -> return all messages for the room in chronological order
     messages = (
         Message.query.filter_by(room=room)
         .order_by(Message.timestamp.asc())
@@ -129,10 +110,10 @@ def get_chat(room):
     )
 
     if not messages:
-        # Return a simple plain-text response when there are no messages yet.
+        #Denis: Return a simple plain-text response when there are no messages yet.
         return Response("No message yet.", mimetype="text/plain")
 
-    # Format each message as: [YYYY-mm-dd HH:MM:SS] username: text
+    #Eyal: Format each message as: [YYYY-mm-dd HH:MM:SS] username: text
     lines = [
         f"[{m.timestamp.strftime('%Y-%m-%d %H:%M:%S')}] {m.username}: {m.text}"
         for m in messages
@@ -142,5 +123,5 @@ def get_chat(room):
 
 
 if __name__ == "__main__":
-    # Run the development server. In production use a WSGI server.
+    #Eyal: Run the development server. In production use a WSGI server.
     app.run(debug=True, host='0.0.0.0', port=5000)
