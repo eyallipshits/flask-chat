@@ -1,3 +1,0 @@
-2025-02-25 12:51:20 | eyal | Hello!
-2025-02-25 12:52:01 | dan | Welcome!
-2025-02-25 12:52:20 | eyal | Testing GET endpoin
