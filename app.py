@@ -1,6 +1,5 @@
 from flask import Flask,redirect,url_for,render_template, request, Response
 from datetime import datetime
-import os
 
 app = Flask(__name__)
 
